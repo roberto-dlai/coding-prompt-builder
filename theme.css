@@ -1,0 +1,146 @@
+/* =====================================================================
+   DeepLearning.AI — Brand Design Tokens
+   Drop this into any web project and reference the CSS custom properties
+   instead of hardcoding values. Pairs with the deeplearning-ai-brand skill.
+
+   Fonts (load via Google Fonts):
+   Poppins (500, 600) — headings, sub-headings, CTAs
+   Open Sans (400, 600) — body
+   ===================================================================== */
+
+:root {
+  /* ---- Core brand colors ---- */
+  --dl-coral:   #F65B66;  /* Primary — identity + primary CTA */
+  --dl-teal:    #237B94;  /* Secondary — trust, featured sections, secondary CTA */
+  --dl-white:   #FFFFFF;
+
+  /* ---- Tertiary accents ---- */
+  --dl-blue:    #1C74EB;  /* default/unclicked links */
+  --dl-yellow:  #FAB901;
+  --dl-purple:  #A12F9D;
+  --dl-magenta: #DD3C66;  /* also the Pie & AI "&" */
+
+  /* ---- Special-purpose ---- */
+  --dl-batch-teal: #1C6272; /* The Batch wordmark (45% brightness teal) */
+
+  /* ---- Coral shades (saturation steps) ---- */
+  --dl-coral-80: #FF0043;
+  --dl-coral-70: #FF325A;
+  --dl-coral-40: #FF8B9C;
+  --dl-coral-30: #FFA6B2;
+  --dl-coral-20: #FDBFC7;
+
+  /* ---- Teal shades (brightness steps) ---- */
+  --dl-teal-35: #164C59;  /* darkest — tag text */
+  --dl-teal-45: #1C6272;
+  --dl-teal-65: #288EA5;
+  --dl-teal-75: #2EA4BF;
+  --dl-teal-80: #32AFCC;  /* lightest — tag fill */
+
+  /* ---- Blue shades ---- */
+  --dl-blue-100: #0070EA;
+  --dl-blue-77:  #368CEA;
+  --dl-blue-67:  #4E98EA;
+  --dl-blue-47:  #7DB1EA;
+  --dl-blue-37:  #94BDEA;
+
+  /* ---- Yellow shades ---- */
+  --dl-yellow-79: #FFB900;
+  --dl-yellow-69: #FFC128;
+  --dl-yellow-49: #FDC952;
+  --dl-yellow-39: #FCD172;
+  --dl-yellow-29: #FAD888;
+
+  /* ---- Purple shades ---- */
+  --dl-purple-100: #9C009E;
+  --dl-purple-80:  #9E009D;
+  --dl-purple-70:  #9E1E9D;
+  --dl-purple-50:  #9F469C;
+  --dl-purple-40:  #9D589C;
+
+  /* ---- Magenta shades ---- */
+  --dl-magenta-100: #DB0044;
+  --dl-magenta-85:  #DB215B;
+  --dl-magenta-62:  #DB537D;
+  --dl-magenta-40:  #DB839F;
+  --dl-magenta-15:  #DBBAC5;
+
+  /* ---- Semantic roles (use these in components) ---- */
+  --dl-bg:              var(--dl-white);
+  --dl-bg-featured:     var(--dl-teal);     /* white text on top */
+  --dl-text:            #111111;            /* black body on white */
+  --dl-text-on-dark:    var(--dl-white);    /* on teal/dark */
+  --dl-cta-primary-bg:  var(--dl-coral);    /* convert / subscribe */
+  --dl-cta-primary-fg:  var(--dl-white);
+  --dl-cta-secondary-bg:var(--dl-teal);     /* internal navigation */
+  --dl-cta-secondary-fg:var(--dl-white);
+  --dl-link:            var(--dl-blue);     /* unclicked */
+  --dl-link-visited:    var(--dl-teal);     /* clicked */
+  --dl-tag-fill:        var(--dl-teal-80);
+  --dl-tag-text:        var(--dl-teal-35);
+
+  /* ---- Typography ---- */
+  --dl-font-heading: "Poppins", system-ui, sans-serif;
+  --dl-font-body:    "Open Sans", system-ui, sans-serif;
+
+  /* Type scale (desktop ratio — scale fluidly for responsive) */
+  --dl-fs-headline: 31.25px;
+  --dl-fs-subhead:  20px;
+  --dl-fs-body:     16px;
+  --dl-fs-cta:      14px;
+
+  --dl-fw-heading: 600;  /* Poppins Semibold */
+  --dl-fw-subhead: 500;  /* Poppins Medium */
+  --dl-fw-body:    400;  /* Open Sans Regular */
+
+  --dl-tracking-heading: -0.01em; /* "optical" kerning approximation */
+}
+
+/* ---- Base element conventions (optional starting point) ---- */
+body {
+  font-family: var(--dl-font-body);
+  font-weight: var(--dl-fw-body);
+  font-size: var(--dl-fs-body);
+  color: var(--dl-text);
+  background: var(--dl-bg);
+}
+
+h1, h2, h3 {
+  font-family: var(--dl-font-heading);
+  font-weight: var(--dl-fw-heading);
+  letter-spacing: var(--dl-tracking-heading);
+}
+
+h1 { font-size: var(--dl-fs-headline); }
+h2 { font-size: var(--dl-fs-subhead); font-weight: var(--dl-fw-subhead); }
+
+a            { color: var(--dl-link); }
+a:visited    { color: var(--dl-link-visited); }
+
+/* Buttons */
+.dl-btn {
+  font-family: var(--dl-font-heading);
+  font-weight: 600;
+  font-size: var(--dl-fs-cta);
+  border: none;
+  border-radius: 8px;
+  padding: 10px 20px;
+  cursor: pointer;
+}
+.dl-btn--primary   { background: var(--dl-cta-primary-bg);   color: var(--dl-cta-primary-fg); }
+.dl-btn--secondary { background: var(--dl-cta-secondary-bg); color: var(--dl-cta-secondary-fg); }
+
+/* Featured section */
+.dl-section--featured {
+  background: var(--dl-bg-featured);
+  color: var(--dl-text-on-dark);
+}
+
+/* Tag / chip */
+.dl-tag {
+  background: var(--dl-tag-fill);
+  color: var(--dl-tag-text);
+  border-radius: 999px;
+  padding: 2px 10px;
+  font-size: 13px;
+}
