@@ -38,7 +38,7 @@ code {
 }
 .brand-lockup:visited { color: var(--dl-text-on-dark); }
 .brand-logo {
-  height: 32px;
+  height: 128px;
   width: auto;
   display: block;
 }
