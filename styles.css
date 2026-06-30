@@ -37,16 +37,10 @@ code {
   margin-bottom: 0.75rem;
 }
 .brand-lockup:visited { color: var(--dl-text-on-dark); }
-.brand-mark {
-  font-size: 1.05rem;
-  letter-spacing: -0.15em;
-  line-height: 1;
-}
-.brand-word {
-  font-family: var(--dl-font-heading);
-  font-weight: 600;
-  font-size: 1.05rem;
-  letter-spacing: var(--dl-tracking-heading);
+.brand-logo {
+  height: 32px;
+  width: auto;
+  display: block;
 }
 .app-header h1 {
   margin: 0;
