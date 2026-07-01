@@ -17,9 +17,26 @@ const resetBtn = document.getElementById("reset-btn");
 
 const STORAGE_KEY = "coding-prompt-builder.form.v1";
 
+/* Sentinel the user picks to explicitly defer a decision to the LLM. Treated as
+   "not set" for stack purposes, but collected so the prompt can ask about it. */
+const DONT_KNOW = "I don't know";
+
 /* A value counts as "set" only if it's a real, affirmative choice. */
-const NOT_SET = ["", "None", "Undecided", "Not specified", "__other__"];
+const NOT_SET = ["", "None", "Undecided", "Not specified", "__other__", DONT_KNOW];
 const isSet = (v) => !!v && !NOT_SET.includes(v);
+
+/* Single-choice fields the user can defer with "I don't know" → shown in the
+   prompt's "Help Me Decide" list so the LLM recommends one and asks. */
+const DECISION_LABELS = {
+  scope: "Scope / ambition level",
+  clientFramework: "Frontend / client framework",
+  frontendLanguage: "Language",
+  styling: "Styling approach",
+  backendLanguage: "Backend language / runtime",
+  backendFramework: "Backend framework",
+  apiStyle: "API style",
+  auth: "Authentication method",
+};
 
 /* ============================================================
    Option data + dependency rules
@@ -211,6 +228,7 @@ function optInput(type, name, value, label, checked) {
 function selectedSingle(name, options, s, opts) {
   const raw = s[name];
   if (raw === "__other__" && opts.allowOther) return "__other__";
+  if (raw === DONT_KNOW && opts.dontKnow) return DONT_KNOW;
   if (raw && options.includes(raw)) return raw;
   if (opts.default && options.includes(opts.default)) return opts.default;
   if (opts.notSpecified) return "";
@@ -241,6 +259,7 @@ function radioGroup(name, options, s, opts = {}) {
   let items = "";
   if (opts.notSpecified) items += optInput("radio", name, "", "— not specified —", sel === "");
   for (const v of options) items += optInput("radio", name, v, v, sel === v);
+  if (opts.dontKnow) items += optInput("radio", name, DONT_KNOW, "🤷 I don't know — recommend one", sel === DONT_KNOW);
   if (opts.allowOther) items += otherRadio(name, sel === "__other__", s[name + "_other"] || "");
   return `<fieldset class="field">${legend(opts.label, opts)}<div class="options${opts.grid ? " grid" : ""}">${items}</div>${hintHtml(opts)}</fieldset>`;
 }
@@ -249,6 +268,7 @@ function checkboxGroup(name, options, s, opts = {}) {
   const sel = Array.isArray(s[name]) ? s[name] : [];
   let items = "";
   for (const v of options) items += optInput("checkbox", name, v, v, sel.includes(v));
+  if (opts.dontKnow) items += optInput("checkbox", name, DONT_KNOW, "🤷 I don't know — recommend one", sel.includes(DONT_KNOW));
   if (opts.allowOther) items += otherCheckbox(name, sel.includes("__other__"), s[name + "_other"] || "");
   return `<fieldset class="field">${legend(opts.label, opts)}<div class="options${opts.grid ? " grid" : ""}">${items}</div>${hintHtml(opts)}</fieldset>`;
 }
@@ -280,7 +300,7 @@ function buildBlocks(s) {
       hint: "This is the heart of your prompt. The more context, the better the plan.",
     }),
     radioGroup("projectType", PROJECT_TYPES, s, { label: "Project type", default: "Web app", allowOther: true }),
-    radioGroup("scope", SCOPES, s, { label: "Scope", notSpecified: true, allowOther: true }),
+    radioGroup("scope", SCOPES, s, { label: "Scope", notSpecified: true, allowOther: true, dontKnow: true }),
   ]);
 
   /* Client (frontend / mobile / desktop) */
@@ -288,7 +308,7 @@ function buildBlocks(s) {
     const fields = [];
     const frameworks = CLIENT_FRAMEWORKS[c.client];
     const fwLabel = c.client === "mobile" ? "Mobile framework" : c.client === "desktop" ? "Desktop framework" : "Framework";
-    fields.push(radioGroup("clientFramework", frameworks, s, { label: fwLabel, notSpecified: true, allowOther: true }));
+    fields.push(radioGroup("clientFramework", frameworks, s, { label: fwLabel, notSpecified: true, allowOther: true, dontKnow: true }));
 
     const fw = single(s, "clientFramework");
     if (isSet(fw)) {
@@ -297,13 +317,14 @@ function buildBlocks(s) {
         radioGroup("frontendLanguage", langs, s, {
           label: "Language",
           default: langs[0],
+          dontKnow: langs.length > 1,
           hint: langs.length === 1 ? `${fw} uses ${langs[0]}.` : "",
         })
       );
       if (c.styling) {
         let styles = ["Plain CSS", "Tailwind", "Sass", "Bootstrap", "CSS Modules"];
         if (fw === "Vanilla HTML/CSS/JS" || fw === "Angular") styles = styles.filter((x) => x !== "CSS Modules");
-        fields.push(radioGroup("styling", styles, s, { label: "Styling", notSpecified: true, allowOther: true }));
+        fields.push(radioGroup("styling", styles, s, { label: "Styling", notSpecified: true, allowOther: true, dontKnow: true }));
       }
       if (c.ui && UI_LIBS[fw]) {
         fields.push(checkboxGroup("uiLibrary", UI_LIBS[fw], s, { label: "UI component library", optional: true, allowOther: true }));
@@ -317,16 +338,16 @@ function buildBlocks(s) {
   if (c.backend) {
     const fields = [];
     const langLabel = c.backend === "lang" ? "Language" : "Language / runtime";
-    fields.push(radioGroup("backendLanguage", BACKEND_LANGS, s, { label: langLabel, notSpecified: true, allowOther: true }));
+    fields.push(radioGroup("backendLanguage", BACKEND_LANGS, s, { label: langLabel, notSpecified: true, allowOther: true, dontKnow: true }));
 
     const bl = single(s, "backendLanguage");
     if (c.backend === "full" && isSet(bl) && BACKEND_FRAMEWORKS[bl]) {
-      fields.push(radioGroup("backendFramework", BACKEND_FRAMEWORKS[bl], s, { label: "Framework", notSpecified: true, allowOther: true }));
+      fields.push(radioGroup("backendFramework", BACKEND_FRAMEWORKS[bl], s, { label: "Framework", notSpecified: true, allowOther: true, dontKnow: true }));
     }
     if (c.api && hasBackend(s)) {
       let styles = ["REST", "GraphQL", "tRPC", "gRPC"];
       if (!tsContext(s)) styles = styles.filter((x) => x !== "tRPC");
-      fields.push(radioGroup("apiStyle", styles, s, { label: "API style", notSpecified: true, allowOther: true }));
+      fields.push(radioGroup("apiStyle", styles, s, { label: "API style", notSpecified: true, allowOther: true, dontKnow: true }));
     }
     add(c.backend === "lang" ? "Language" : "Backend", fields);
   }
@@ -335,7 +356,7 @@ function buildBlocks(s) {
   if (c.db) {
     const fields = [
       checkboxGroup("dbEngine", DB_ENGINES, s, {
-        label: "Database engine(s)", allowOther: true,
+        label: "Database engine(s)", allowOther: true, dontKnow: true,
         hint: "Pick one or more — you can mix relational and non-relational (e.g. Postgres + Redis). The category is inferred per engine.",
       }),
     ];
@@ -353,7 +374,7 @@ function buildBlocks(s) {
 
   /* Authentication */
   if (c.auth) {
-    add("Authentication", [radioGroup("auth", authOptions(s), s, { label: "Method", default: "None", allowOther: true })]);
+    add("Authentication", [radioGroup("auth", authOptions(s), s, { label: "Method", default: "None", allowOther: true, dontKnow: true })]);
   }
 
   /* Hosting / Deployment */
@@ -423,6 +444,17 @@ function buildPrompt(raw) {
     nonFunctional: single(raw, "nonFunctional"),
     conventions: single(raw, "conventions"),
   };
+
+  /* Collect decisions the user deferred with "I don't know" so we can ask about
+     them explicitly, and drop the sentinel from the DB list. */
+  const undecided = [];
+  for (const [name, label] of Object.entries(DECISION_LABELS)) {
+    if (s[name] === DONT_KNOW) undecided.push(label);
+  }
+  if (s.dbEngine.includes(DONT_KNOW)) {
+    undecided.push("Database engine / data store");
+    s.dbEngine = s.dbEngine.filter((e) => e !== DONT_KNOW);
+  }
 
   const pt = s.projectType || "Web app";
   const lines = [];
@@ -509,6 +541,18 @@ function buildPrompt(raw) {
   if (s.conventions) constraints.push(`- Conventions / notes: ${s.conventions}`);
   if (constraints.length) lines.push("## Constraints & Preferences", ...constraints, "");
 
+  /* Anything the user marked "I don't know" — ask the LLM to recommend + confirm. */
+  if (undecided.length) {
+    lines.push("## Open Questions — Help Me Decide");
+    lines.push(
+      "I haven't decided the following yet (I marked them \"I don't know\"). For each, " +
+        "recommend a sensible default with a one-line rationale, and ask me before " +
+        "locking in any choice that would significantly shape the architecture:"
+    );
+    undecided.forEach((u) => lines.push(`- ${u}`));
+    lines.push("");
+  }
+
   /* The instruction that makes this a usable prompt */
   lines.push("## Your Task");
   lines.push(
@@ -520,6 +564,11 @@ function buildPrompt(raw) {
     "3. A breakdown of files/modules and their responsibilities.",
     "4. Milestones in the order they should be built, with what each delivers.",
     "5. Risks, edge cases, open questions, and assumptions you are making.",
+    "",
+    "As you build the plan, ask me clarifying questions about anything that is " +
+      "ambiguous, missing, or that I marked as \"I don't know.\" For each open decision, " +
+      "propose a recommended option with its trade-offs rather than guessing silently. " +
+      "If you must proceed on an assumption, state it explicitly and flag it for my review.",
     "",
     "Do not write the full application yet — produce the plan first so we can review it."
   );
